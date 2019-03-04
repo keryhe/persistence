@@ -24,9 +24,9 @@ Use ExecuteNonQuery to implement Insert, Update, or Delete statements as well as
 
 ```c#
 int ExecuteNonQuery(string commandText, CommandType commandType, Dictionary<string, object> parameters, ref Dictionary<string, object> outputParameters);
-        int ExecuteNonQuery(string commandText, CommandType commandType, Dictionary<string, object> parameters);
-        int ExecuteNonQuery(string commandText, CommandType commandType);
-        int ExecuteNonQuery(string commandText);
+int ExecuteNonQuery(string commandText, CommandType commandType, Dictionary<string, object> parameters);
+int ExecuteNonQuery(string commandText, CommandType commandType);
+int ExecuteNonQuery(string commandText);
 ```
 
 # Keryhe.Persistence.MySql
