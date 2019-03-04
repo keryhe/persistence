@@ -16,8 +16,8 @@ Use ExecuteQuery to implement select statements or call stored procedures that r
 
 ```c#
 IDataReader ExecuteQuery(string commandText, CommandType commandType, Dictionary<string, object> parameters);
-        IDataReader ExecuteQuery(string commandText, CommandType commandType);
-        IDataReader ExecuteQuery(string commandText);
+IDataReader ExecuteQuery(string commandText, CommandType commandType);
+IDataReader ExecuteQuery(string commandText);
 ```
 
 Use ExecuteNonQuery to implement Insert, Update, or Delete statements as well as stored procedures that insert update or delete data.
