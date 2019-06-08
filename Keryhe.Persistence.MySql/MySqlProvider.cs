@@ -3,6 +3,7 @@ using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Transactions;
 
 namespace Keryhe.Persistence.MySql
 {
@@ -15,12 +16,16 @@ namespace Keryhe.Persistence.MySql
             _connectionString = options.Value.ConnectionString;
         }
 
-        public IDataReader ExecuteQuery(string commandText, CommandType commandType, Dictionary<string, object> parameters)
+        public IDbConnection CreateConnection()
         {
-            MySqlConnection connection = new MySqlConnection(_connectionString);
-            MySqlCommand command = new MySqlCommand(commandText, connection);
+            IDbConnection connection = new MySqlConnection(_connectionString);
+            return connection;
+        }
+
+        public IDataReader ExecuteQuery(IDbConnection connection, string commandText, CommandType commandType, Dictionary<string, object> parameters)
+        {
+            MySqlCommand command = new MySqlCommand(commandText, (MySqlConnection)connection);
             command.CommandType = commandType;
-            connection.Open();
 
             if (parameters != null)
             {
@@ -31,139 +36,69 @@ namespace Keryhe.Persistence.MySql
                 }
             }
 
-            return command.ExecuteReader(CommandBehavior.CloseConnection);
+            return command.ExecuteReader();
         }
 
-        public IDataReader ExecuteQuery(string commandText, CommandType commandType)
+        public IDataReader ExecuteQuery(IDbConnection connection, string commandText, CommandType commandType)
         {
-            return ExecuteQuery(commandText, commandType, null);
+            return ExecuteQuery(connection, commandText, commandType, null);
         }
 
-        public IDataReader ExecuteQuery(string commandText)
+        public IDataReader ExecuteQuery(IDbConnection connection, string commandText)
         {
-            return ExecuteQuery(commandText, CommandType.Text);
+            return ExecuteQuery(connection, commandText, CommandType.Text);
         }
 
-        public int ExecuteNonQuery(string commandText, CommandType commandType, Dictionary<string, object> parameters, ref Dictionary<string, object> outputParameters)
+        public int ExecuteNonQuery(IDbConnection connection, string commandText, CommandType commandType, Dictionary<string, object> parameters, Dictionary<string, object> outputParameters)
         {
-            MySqlConnection connection = new MySqlConnection(_connectionString);
-            try
+            MySqlCommand command = new MySqlCommand(commandText, (MySqlConnection)connection);
+            command.CommandType = commandType;
+
+            if (parameters != null)
             {
-                MySqlCommand command = new MySqlCommand(commandText, connection);
-                command.CommandType = commandType;
-                connection.Open();
-
-                if (parameters != null)
+                foreach (string parameter in parameters.Keys)
                 {
-                    foreach (string parameter in parameters.Keys)
-                    {
-                        MySqlParameter sqlParameter = new MySqlParameter(parameter, parameters[parameter]);
-                        command.Parameters.Add(parameter);
-                    }
-                }
-
-                if (outputParameters != null)
-                {
-                    foreach (string outputParameter in outputParameters.Keys)
-                    {
-                        MySqlParameter sqlOutputParameter = new MySqlParameter(outputParameter, outputParameters[outputParameter]);
-                        command.Parameters.Add(sqlOutputParameter);
-                    }
-                }
-
-                int result = command.ExecuteNonQuery();
-
-                if (outputParameters != null)
-                {
-                    foreach (MySqlParameter commandParameter in command.Parameters)
-                    {
-                        outputParameters[commandParameter.ParameterName] = command.Parameters[commandParameter.ParameterName].Value.ToString();
-                    }
-                }
-
-                return result;
-            }
-            finally
-            {
-                if (connection != null)
-                {
-                    connection.Close();
+                    MySqlParameter sqlParameter = new MySqlParameter(parameter, parameters[parameter]);
+                    command.Parameters.Add(parameter);
                 }
             }
-        }
 
-        public int ExecuteNonQuery(string commandText, CommandType commandType, Dictionary<string, object> parameters)
-        {
-            using (MySqlConnection connection = new MySqlConnection(_connectionString))
+            if (outputParameters != null)
             {
-                MySqlCommand command = new MySqlCommand(commandText, connection);
-                command.CommandType = commandType;
-                connection.Open();
-
-                if (parameters != null)
+                foreach (string outputParameter in outputParameters.Keys)
                 {
-                    foreach (string parameter in parameters.Keys)
-                    {
-                        MySqlParameter sqlParameter = new MySqlParameter(parameter, parameters[parameter]);
-                        command.Parameters.Add(sqlParameter);
-                    }
+                    MySqlParameter sqlOutputParameter = new MySqlParameter(outputParameter, outputParameters[outputParameter]);
+                    command.Parameters.Add(sqlOutputParameter);
                 }
-
-                int result = command.ExecuteNonQuery();
-                return result;
             }
+
+            int result = command.ExecuteNonQuery();
+
+            if (outputParameters != null)
+            {
+                foreach (MySqlParameter commandParameter in command.Parameters)
+                {
+                    outputParameters[commandParameter.ParameterName] = command.Parameters[commandParameter.ParameterName].Value.ToString();
+                }
+            }
+
+            return result;
         }
 
-        public int ExecuteNonQuery(string commandText, CommandType commandType)
+        public int ExecuteNonQuery(IDbConnection connection, string commandText, CommandType commandType, Dictionary<string, object> parameters)
         {
-            return ExecuteNonQuery(commandText, commandType);
+            return ExecuteNonQuery(connection, commandText, commandType, parameters, null);
         }
 
-        public int ExecuteNonQuery(string commandText)
+        public int ExecuteNonQuery(IDbConnection connection, string commandText, CommandType commandType)
         {
-            return ExecuteNonQuery(commandText, CommandType.Text);
+            return ExecuteNonQuery(connection, commandText, commandType);
         }
 
-        public IDbTransaction BeginTransaction()
+        public int ExecuteNonQuery(IDbConnection connection, string commandText)
         {
-            throw new NotImplementedException();
+            return ExecuteNonQuery(connection, commandText, CommandType.Text);
         }
-
-        public void CommitTransaction(IDbTransaction transaction)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void RollbackTransaction(IDbTransaction transaction)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IDataReader ExecuteQuery(IDbTransaction transaction, string commandText, CommandType commandType, Dictionary<string, object> parameters)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IDataReader ExecuteQuery(IDbTransaction transaction, string commandText, CommandType commandType)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IDataReader ExecuteQuery(IDbTransaction transaction, string commandText)
-        {
-            throw new NotImplementedException();
-        }
-
-        public int ExecuteNonQuery(IDbTransaction transaction, string commandText, CommandType commandType, Dictionary<string, object> parameters)
-        {
-            throw new NotImplementedException();
-        }
-
-        public int ExecuteNonQuery(IDbTransaction transaction, string commandText, CommandType commandType)
-        {
-            throw new NotImplementedException();
-        }
-
     }
 }
 

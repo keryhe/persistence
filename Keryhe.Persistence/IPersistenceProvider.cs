@@ -1,28 +1,20 @@
 ﻿using System.Collections.Generic;
 using System.Data;
+using System.Transactions;
 
 namespace Keryhe.Persistence
 {
     public interface IPersistenceProvider
     {
-        IDataReader ExecuteQuery(string commandText, CommandType commandType, Dictionary<string, object> parameters);
-        IDataReader ExecuteQuery(string commandText, CommandType commandType);
-        IDataReader ExecuteQuery(string commandText);
+        IDbConnection CreateConnection();
 
-        int ExecuteNonQuery(string commandText, CommandType commandType, Dictionary<string, object> parameters, ref Dictionary<string, object> outputParameters);
-        int ExecuteNonQuery(string commandText, CommandType commandType, Dictionary<string, object> parameters);
-        int ExecuteNonQuery(string commandText, CommandType commandType);
-        int ExecuteNonQuery(string commandText);
+        IDataReader ExecuteQuery(IDbConnection connection, string commandText, CommandType commandType, Dictionary<string, object> parameters);
+        IDataReader ExecuteQuery(IDbConnection connection, string commandText, CommandType commandType);
+        IDataReader ExecuteQuery(IDbConnection connection, string commandText);
 
-        IDbTransaction BeginTransaction();
-        void CommitTransaction(IDbTransaction transaction);
-        void RollbackTransaction(IDbTransaction transaction);
-
-        IDataReader ExecuteQuery(IDbTransaction transaction, string commandText, CommandType commandType, Dictionary<string, object> parameters);
-        IDataReader ExecuteQuery(IDbTransaction transaction, string commandText, CommandType commandType);
-        IDataReader ExecuteQuery(IDbTransaction transaction, string commandText);
-
-        int ExecuteNonQuery(IDbTransaction transaction, string commandText, CommandType commandType, Dictionary<string, object> parameters);
-        int ExecuteNonQuery(IDbTransaction transaction, string commandText, CommandType commandType);
+        int ExecuteNonQuery(IDbConnection connection, string commandText, CommandType commandType, Dictionary<string, object> parameters, Dictionary<string, object> outputParameters);
+        int ExecuteNonQuery(IDbConnection connection, string commandText, CommandType commandType, Dictionary<string, object> parameters);
+        int ExecuteNonQuery(IDbConnection connection, string commandText, CommandType commandType);
+        int ExecuteNonQuery(IDbConnection connection, string commandText);
     }
 }

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using Npgsql;
+using System.Transactions;
 
 namespace Keryhe.Persistence.PostgreSQL
 {
@@ -15,12 +16,16 @@ namespace Keryhe.Persistence.PostgreSQL
             _connectionString = options.Value.ConnectionString;
         }
 
-        public IDataReader ExecuteQuery(string commandText, CommandType commandType, Dictionary<string, object> parameters)
+        public IDbConnection CreateConnection()
         {
-            NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
-            NpgsqlCommand command = new NpgsqlCommand(commandText, connection);
+            IDbConnection connection = new NpgsqlConnection(_connectionString);
+            return connection;
+        }
+
+        public IDataReader ExecuteQuery(IDbConnection connection, string commandText, CommandType commandType, Dictionary<string, object> parameters)
+        {
+            NpgsqlCommand command = new NpgsqlCommand(commandText, (NpgsqlConnection)connection);
             command.CommandType = commandType;
-            connection.Open();
 
             if (parameters != null)
             {
@@ -34,134 +39,65 @@ namespace Keryhe.Persistence.PostgreSQL
             return command.ExecuteReader(CommandBehavior.CloseConnection);
         }
 
-        public IDataReader ExecuteQuery(string commandText, CommandType commandType)
+        public IDataReader ExecuteQuery(IDbConnection connection, string commandText, CommandType commandType)
         {
-            return ExecuteQuery(commandText, commandType, null);
+            return ExecuteQuery(connection, commandText, commandType, null);
         }
 
-        public IDataReader ExecuteQuery(string commandText)
+        public IDataReader ExecuteQuery(IDbConnection connection, string commandText)
         {
-            return ExecuteQuery(commandText, System.Data.CommandType.Text);
+            return ExecuteQuery(connection, commandText, System.Data.CommandType.Text);
         }
 
-        public int ExecuteNonQuery(string commandText, CommandType commandType, Dictionary<string, object> parameters, ref Dictionary<string, object> outputParameters)
+        public int ExecuteNonQuery(IDbConnection connection, string commandText, CommandType commandType, Dictionary<string, object> parameters, Dictionary<string, object> outputParameters)
         {
-            NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
-            try
+            NpgsqlCommand command = new NpgsqlCommand(commandText, (NpgsqlConnection)connection);
+            command.CommandType = commandType;
+
+            if (parameters != null)
             {
-                NpgsqlCommand command = new NpgsqlCommand(commandText, connection);
-                command.CommandType = commandType;
-                connection.Open();
-
-                if (parameters != null)
+                foreach (string parameter in parameters.Keys)
                 {
-                    foreach (string parameter in parameters.Keys)
-                    {
-                        NpgsqlParameter sqlParameter = new NpgsqlParameter(parameter, parameters[parameter]);
-                        command.Parameters.Add(parameter);
-                    }
-                }
-
-                if (outputParameters != null)
-                {
-                    foreach (string outputParameter in outputParameters.Keys)
-                    {
-                        NpgsqlParameter sqlOutputParameter = new NpgsqlParameter(outputParameter, outputParameters[outputParameter]);
-                        command.Parameters.Add(sqlOutputParameter);
-                    }
-                }
-
-                int result = command.ExecuteNonQuery();
-
-                if (outputParameters != null)
-                {
-                    foreach (NpgsqlParameter commandParameter in command.Parameters)
-                    {
-                        outputParameters[commandParameter.ParameterName] = command.Parameters[commandParameter.ParameterName].Value.ToString();
-                    }
-                }
-
-                return result;
-            }
-            finally
-            {
-                if (connection != null)
-                {
-                    connection.Close();
+                    NpgsqlParameter sqlParameter = new NpgsqlParameter(parameter, parameters[parameter]);
+                    command.Parameters.Add(parameter);
                 }
             }
-        }
 
-        public int ExecuteNonQuery(string commandText, CommandType commandType, Dictionary<string, object> parameters)
-        {
-            using (NpgsqlConnection connection = new NpgsqlConnection(_connectionString))
+            if (outputParameters != null)
             {
-                NpgsqlCommand command = new NpgsqlCommand(commandText, connection);
-                command.CommandType = commandType;
-                connection.Open();
-
-                if (parameters != null)
+                foreach (string outputParameter in outputParameters.Keys)
                 {
-                    foreach (string parameter in parameters.Keys)
-                    {
-                        NpgsqlParameter sqlParameter = new NpgsqlParameter(parameter, parameters[parameter]);
-                        command.Parameters.Add(sqlParameter);
-                    }
+                    NpgsqlParameter sqlOutputParameter = new NpgsqlParameter(outputParameter, outputParameters[outputParameter]);
+                    command.Parameters.Add(sqlOutputParameter);
                 }
-
-                int result = command.ExecuteNonQuery();
-                return result;
             }
+
+            int result = command.ExecuteNonQuery();
+
+            if (outputParameters != null)
+            {
+                foreach (NpgsqlParameter commandParameter in command.Parameters)
+                {
+                    outputParameters[commandParameter.ParameterName] = command.Parameters[commandParameter.ParameterName].Value.ToString();
+                }
+            }
+
+            return result;
         }
 
-        public int ExecuteNonQuery(string commandText, CommandType commandType)
+        public int ExecuteNonQuery(IDbConnection connection, string commandText, CommandType commandType, Dictionary<string, object> parameters)
         {
-            return ExecuteNonQuery(commandText, commandType);
+            return ExecuteNonQuery(connection, commandText, commandType, parameters, null);
         }
 
-        public int ExecuteNonQuery(string commandText)
+        public int ExecuteNonQuery(IDbConnection connection, string commandText, CommandType commandType)
         {
-            return ExecuteNonQuery(commandText, CommandType.Text);
+            return ExecuteNonQuery(connection, commandText, commandType);
         }
 
-        public IDbTransaction BeginTransaction()
+        public int ExecuteNonQuery(IDbConnection connection, string commandText)
         {
-            throw new NotImplementedException();
-        }
-
-        public void CommitTransaction(IDbTransaction transaction)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void RollbackTransaction(IDbTransaction transaction)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IDataReader ExecuteQuery(IDbTransaction transaction, string commandText, CommandType commandType, Dictionary<string, object> parameters)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IDataReader ExecuteQuery(IDbTransaction transaction, string commandText, CommandType commandType)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IDataReader ExecuteQuery(IDbTransaction transaction, string commandText)
-        {
-            throw new NotImplementedException();
-        }
-
-        public int ExecuteNonQuery(IDbTransaction transaction, string commandText, CommandType commandType, Dictionary<string, object> parameters)
-        {
-            throw new NotImplementedException();
-        }
-
-        public int ExecuteNonQuery(IDbTransaction transaction, string commandText, CommandType commandType)
-        {
-            throw new NotImplementedException();
+            return ExecuteNonQuery(connection, commandText, CommandType.Text);
         }
     }
 }
