@@ -65,7 +65,7 @@ namespace Keryhe.Persistence.SqlServer
                     {
                         sqlParameter = new SqlParameter(key, parameters[key]);
                     }
-                    command.Parameters.Add(key);
+                    command.Parameters.Add(sqlParameter);
                 }
             }
 
